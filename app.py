@@ -484,3 +484,13 @@ def make_admin():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
+@app.route("/admin/cats/<int:cat_id>/delete", methods=["POST"])
+@admin_required
+def admin_cat_delete(cat_id):
+    with get_db() as db:
+        db.execute("DELETE FROM cats WHERE id = ?", (cat_id,))
+        db.commit()
+    flash("Gato excluído.", "success")
+    return redirect(url_for("admin_cats"))
+
