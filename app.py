@@ -361,6 +361,27 @@ def admin_user_edit(user_id):
         return redirect(url_for("admin_users"))
     return render_template("admin_user_form.html", user=current_user(), u=u)
 
+@app.route("/admin/users/<int:user_id>/delete", methods=["POST"])
+@admin_required
+def admin_user_delete(user_id):
+    me = current_user()
+    if me["id"] == user_id:
+        flash("Você não pode excluir a si mesmo.", "danger")
+        return redirect(url_for("admin_users"))
+
+    with get_db() as db:
+        # Verifica vínculos
+        has_cats = db.execute("SELECT 1 FROM cats WHERE owner_id = ? LIMIT 1", (user_id,)).fetchone()
+        if has_cats:
+            flash("Não é possível excluir: o usuário possui gatos vinculados.", "danger")
+            return redirect(url_for("admin_users"))
+
+        db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        db.commit()
+    flash("Usuário excluído.", "success")
+    return redirect(url_for("admin_users"))
+
+
 @app.route("/admin/cats")
 @admin_required
 def admin_cats():
