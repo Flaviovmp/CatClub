@@ -42,11 +42,11 @@ CREATE TABLE IF NOT EXISTS cats (
     color_id INTEGER NOT NULL,
     dob TEXT,
     registry_number TEXT,
-    registry_entity TEXT, -- FIFE Brasil, FIFE não Brasil, não FIFE
+    registry_entity TEXT,
     microchip TEXT,
     sex TEXT NOT NULL,
-    neutered INTEGER NOT NULL DEFAULT 0, -- 0/1
-    breeder_type TEXT, -- 'eu' or 'outro'
+    neutered INTEGER NOT NULL DEFAULT 0,
+    breeder_type TEXT,
     breeder_name TEXT,
 
     sire_name TEXT,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS cats (
     dam_breed_id INTEGER,
     dam_color_id INTEGER,
 
-    status TEXT NOT NULL DEFAULT 'pending', -- pending, approved, rejected
+    status TEXT NOT NULL DEFAULT 'pending',
     created_at TEXT DEFAULT (datetime('now')),
 
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,

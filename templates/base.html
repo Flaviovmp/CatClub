@@ -21,6 +21,7 @@
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
         {% if user %}
+        {% if user.is_admin %}<li class="nav-item"><a class="nav-link" href="{{ url_for('admin_home') }}">Painel Admin</a></li>{% endif %}
         <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Meu painel</a></li>
         <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Sair</a></li>
         {% else %}
@@ -31,6 +32,15 @@
     </div>
   </div>
 </nav>
+
+{% if user and user.is_admin %}
+<div id="admin-banner" class="py-2" style="background:#0d6efd;color:#fff;">
+  <div class="container d-flex justify-content-between align-items-center">
+    <div><strong>Modo Administrador</strong> — você pode aprovar/rejeitar registros de gatos.</div>
+    <div><a href="{{ url_for('admin_home') }}" class="btn btn-light btn-sm">Ir para o Painel Admin</a></div>
+  </div>
+</div>
+{% endif %}
 
 <div class="container my-4">
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -55,10 +65,10 @@ async function loadColors(breedSelectId, colorSelectId, emsSpanId){
   const emsSpan = emsSpanId ? document.getElementById(emsSpanId) : null;
   colorSelect.innerHTML = '<option value="">Carregando...</option>';
   if (emsSpan) emsSpan.textContent = '';
-  if(!breedId){ colorSelect.innerHTML = '<option value="">Selecione a raça primeiro</option>'; return; }
+  if(!breedId){ colorSelect.innerHTML = '<option value=\"\">Selecione a raça primeiro</option>'; return; }
   const res = await fetch(`/api/colors?breed_id=${breedId}`);
   const data = await res.json();
-  colorSelect.innerHTML = '<option value="">Selecione...</option>';
+  colorSelect.innerHTML = '<option value=\"\">Selecione...</option>';
   data.forEach(c => {
     const opt = document.createElement('option');
     opt.value = c.id;

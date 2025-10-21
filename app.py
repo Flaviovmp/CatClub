@@ -5,6 +5,8 @@ import sqlite3
 import os
 import re
 
+DB_PATH = os.path.join(os.path.dirname(__file__), "catclub.db")
+
 UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]
 
 def only_digits(s):
@@ -14,11 +16,9 @@ def validate_cpf(cpf_raw: str) -> bool:
     cpf = only_digits(cpf_raw)
     if len(cpf) != 11 or cpf == cpf[0] * 11:
         return False
-    # Calculate first check digit
     sum1 = sum(int(cpf[i]) * (10 - i) for i in range(9))
     d1 = (sum1 * 10) % 11
     d1 = 0 if d1 == 10 else d1
-    # Calculate second check digit
     sum2 = sum(int(cpf[i]) * (11 - i) for i in range(10))
     d2 = (sum2 * 10) % 11
     d2 = 0 if d2 == 10 else d2
@@ -26,13 +26,8 @@ def validate_cpf(cpf_raw: str) -> bool:
 
 def validate_cep(cep_raw: str) -> bool:
     if not cep_raw:
-        return True  # optional
-    # Accept formats: 00000-000 or 00000000
-    m = re.fullmatch(r"\d{5}-?\d{3}", cep_raw.strip())
-    return m is not None
-
-
-DB_PATH = os.path.join(os.path.dirname(__file__), "catclub.db")
+        return True
+    return re.fullmatch(r"\d{5}-?\d{3}", cep_raw.strip()) is not None
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -49,8 +44,6 @@ def create_app():
         # Seed minimal data if empty
         bcount = db.execute("SELECT COUNT(*) AS c FROM breeds").fetchone()["c"]
         if bcount == 0:
-            open(os.path.join(os.path.dirname(__file__), "seed.py"), "r", encoding="utf-8").read()
-            # Execute seed inline to avoid import path issues
             seed_code = ""
             with open(os.path.join(os.path.dirname(__file__), "seed.py"), "r", encoding="utf-8") as f:
                 seed_code = f.read()
@@ -59,7 +52,6 @@ def create_app():
 
 app = create_app()
 
-# ---------- Helpers ----------
 def current_user():
     uid = session.get("user_id")
     if not uid:
@@ -88,7 +80,6 @@ def admin_required(fn):
         return fn(*args, **kwargs)
     return wrapper
 
-# ---------- Routes ----------
 @app.route("/")
 def index():
     return render_template("index.html", user=current_user())
@@ -186,7 +177,6 @@ def dashboard():
         """, (user["id"],)).fetchall()
     return render_template("dashboard.html", user=user, cats=cats)
 
-# ----- dynamic selects -----
 @app.route("/api/colors")
 def api_colors():
     breed_id = request.args.get("breed_id")
@@ -196,7 +186,6 @@ def api_colors():
         rows = db.execute("SELECT id, name, ems_code FROM colors WHERE breed_id = ? ORDER BY name", (breed_id,)).fetchall()
     return jsonify([{"id": r["id"], "name": r["name"], "ems_code": r["ems_code"]} for r in rows])
 
-# ----- Cats -----
 @app.route("/cats/new", methods=["GET","POST"])
 @login_required
 def cat_new():
@@ -244,7 +233,6 @@ def cat_new():
 
     return render_template("cat_form.html", user=user, breeds=breeds)
 
-# ----- Admin -----
 @app.route("/admin")
 @admin_required
 def admin_home():
@@ -273,10 +261,8 @@ def admin_cat_action(cat_id, action):
     flash(f"Registro do gato atualizado para: {new_status}.", "success")
     return redirect(url_for("admin_home"))
 
-# ---------- Utility: simple admin login for demo ----------
 @app.route("/make-admin", methods=["POST"])
 def make_admin():
-    # Quick helper to promote a user to admin by email (for testing)
     email = request.form.get("email","").lower().strip()
     if not email:
         flash("Informe um email.", "danger")
@@ -288,4 +274,5 @@ def make_admin():
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)

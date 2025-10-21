@@ -1,26 +1,40 @@
-def seed_all_fife_breeds():
-    # Lista de RAÇAS conforme página oficial “Breeds” da FIFe (reconhecidas + preliminares).
-    # Referência: FIFe Breeds page. Atualize aqui caso a FIFe altere a lista. 
-    breeds = [
-        # Categoria 1
-        "Exotic", "Persian", "Ragdoll", "Sacred Birman", "Turkish Van",
-        # Categoria 2
-        "American Curl Longhair", "American Curl Shorthair", "LaPerm Longhair", "LaPerm Shorthair",
-        "Maine Coon", "Neva Masquerade", "Norwegian Forest Cat", "Siberian", "Turkish Angora",
-        # Categoria 3
-        "Bengal", "British Longhair", "Burmilla", "British Shorthair", "Burmese", "Chartreux",
-        "Cymric", "European", "Kurilean Bobtail Longhair", "Kurilean Bobtail Shorthair",
-        "Korat", "Manx", "Egyptian Mau", "Ocicat", "Singapura", "Snowshoe",
-        "Sokoke", "Selkirk Rex Longhair", "Selkirk Rex Shorthair",
-        # Categoria 4
-        "Abyssinian", "Balinese", "Cornish Rex", "Devon Rex", "Don Sphynx", "German Rex",
-        "Japanese Bobtail Shorthair", "Oriental Longhair", "Oriental Shorthair",
-        "Peterbald", "Russian Blue", "Siamese", "Somali", "Sphynx", "Thai",
-        # Preliminares
-        "Bombay", "Lykoi"
-    ]
-
+# Minimal seed for demo purposes
+def seed():
     with get_db() as db:
-        for name in breeds:
-            db.execute("INSERT OR IGNORE INTO breeds (name) VALUES (?)", (name,))
+        # Breeds (sample)
+        breeds = ["Ragdoll", "Persian", "Maine Coon", "Sphynx", "Devon Rex", "Bengal", "British Shorthair", "Oriental Shorthair"]
+        for b in breeds:
+            db.execute("INSERT OR IGNORE INTO breeds (name) VALUES (?)", (b,))
         db.commit()
+
+        # Colors & EMS (sample per breed) — substitua pelos dados oficiais quando tiver
+        color_sets = {
+            "Ragdoll": [("Seal Point", "RAG n"), ("Blue Point", "RAG a"), ("Chocolate Point", "RAG b")],
+            "Persian": [("Black", "PER n"), ("Blue", "PER a"), ("Red", "PER d")],
+            "Maine Coon": [("Brown Tabby", "MCO n 22"), ("Blue Tabby", "MCO a 22")],
+            "Sphynx": [("Black", "SPH n"), ("Blue", "SPH a")],
+            "Devon Rex": [("Black", "DRX n"), ("Blue", "DRX a")],
+            "Bengal": [("Brown Spotted", "BEN n 24"), ("Snow Lynx", "BEN n 33")],
+            "British Shorthair": [("Blue", "BSH a"), ("Lilac", "BSH c")],
+            "Oriental Shorthair": [("Black", "OSH n"), ("Chestnut", "OSH b")]
+        }
+
+        rows = db.execute("SELECT id, name FROM breeds").fetchall()
+        name_to_id = {r["name"]: r["id"] for r in rows}
+        for breed_name, colors in color_sets.items():
+            bid = name_to_id[breed_name]
+            for cname, ems in colors:
+                db.execute("INSERT OR IGNORE INTO colors (breed_id, name, ems_code) VALUES (?, ?, ?)", (bid, cname, ems))
+        db.commit()
+
+        # Create a demo admin if none exists
+        admin = db.execute("SELECT id FROM users WHERE email = 'admin@riocatclub.test'").fetchone()
+        if not admin:
+            from werkzeug.security import generate_password_hash
+            db.execute("""
+                INSERT INTO users (name, email, password_hash, is_admin)
+                VALUES (?, ?, ?, 1)
+            """, ("Admin Demo", "admin@riocatclub.test", generate_password_hash("admin123")))
+            db.commit()
+
+seed()

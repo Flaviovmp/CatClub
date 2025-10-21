@@ -1,39 +1,25 @@
-# Sistema Clube de Gatos (Flask + SQLite)
+# Sistema Clube de Gatos (Flask + SQLite) — Admin UI melhorada
 
-Projeto simples para cadastro de associados e registro de gatos com fluxo de aprovação do administrador.
+- Navbar mostra **Painel Admin** quando `is_admin = 1`.
+- Banner “**Modo Administrador**” com botão para `/admin` quando admin logado.
+- Botão “**Ir para o Painel Admin**” no dashboard para admins.
+- Validações: **CPF**, **CEP** e dropdown de **UF**.
 
 ## Rodar localmente
-1. Instale Python 3.10+
-2. Em um terminal, dentro da pasta do projeto, crie um ambiente virtual:
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # Windows: .venv\Scripts\activate
-   pip install -r requirements.txt
-   python app.py
-   ```
-3. Acesse http://localhost:5000
-4. Admin demo: `admin@riocatclub.test` / senha `admin123` (altere depois).
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
+Acesse: http://localhost:5000
 
-## Implantar online (Render.com - grátis)
-1. Crie uma conta em https://render.com e conecte seu GitHub.
-2. Faça o upload do projeto para um repositório no GitHub.
-3. Em Render, crie um **Web Service**:
-   - Runtime: *Python*
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `python app.py`
-   - Add Environment Variable: `SECRET_KEY` com um valor aleatório longo.
-4. Deploy e abra a URL pública.
+Admin demo: `admin@riocatclub.test` / senha `admin123`
 
-> Alternativas: Railway.app ou Replit também funcionam com o mesmo comando `python app.py`.
-
-## Notas
-- A tabela `colors` guarda a relação Raça → Cor → EMS (um EMS por cor). As listas são exemplos e devem ser substituídas pela tabela oficial do clube quando disponível.
-- O endpoint `/api/colors?breed_id=ID` alimenta os combos de cores dinamicamente.
-- Fluxo de aprovação: os gatos ficam `pending` até o admin aprovar/rejeitar em `/admin`.
-- Para promover seu usuário a admin, use o formulário na página inicial (apenas para testes).
-
-
-### Validações adicionadas
-- **CPF**: validação de dígitos verificadores (aceita com ou sem máscara).
-- **CEP**: aceita `00000-000` ou `00000000`.
-- **UF**: seleção por dropdown com as 27 UFs brasileiras.
+## Deploy no Render
+- Build: `pip install -r requirements.txt`
+- Start: `python app.py`
+- Env: `SECRET_KEY` com valor longo. O app usa `PORT` automaticamente.
+```
