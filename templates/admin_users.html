@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5">Usuários</h1>
+  <form class="d-flex gap-2" method="get">
+    <input class="form-control form-control-sm" type="text" name="q" value="{{ q }}" placeholder="Buscar por nome ou email">
+    <button class="btn btn-outline-secondary btn-sm" type="submit">Buscar</button>
+  </form>
+</div>
+<div class="card p-3">
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead><tr>
+        <th>Nome</th><th>Email</th><th>Telefone</th><th>Admin</th><th>Cidade/UF</th><th>Desde</th><th style="width:180px">Ações</th>
+      </tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.phone }}</td>
+          <td>{% if u.is_admin %}<span class="badge text-bg-primary">Sim</span>{% else %}<span class="badge text-bg-secondary">Não</span>{% endif %}</td>
+          <td>{{ u.city }}{% if u.state %}/{{ u.state }}{% endif %}</td>
+          <td>{{ u.created_at }}</td>
+          <td><a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin_user_edit', user_id=u.id) }}">Editar</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
