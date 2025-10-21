@@ -304,15 +304,24 @@ def admin_home():
 @admin_required
 def admin_users():
     q = request.args.get("q","").strip()
-    sql = "SELECT * FROM users"
-    params = ()
+    page, per_page, offset = parse_pagination(default_per_page=20)
+
+    base_sql = "FROM users"
+    where = ""
+    params = []
     if q:
-        sql += " WHERE name LIKE ? OR email LIKE ?"
-        params = (f"%{q}%", f"%{q}%")
-    sql += " ORDER BY created_at DESC"
+        where = " WHERE name LIKE ? OR email LIKE ?"
+        params = [f"%{q}%", f"%{q}%"]
+
     with get_db() as db:
-        users = db.execute(sql, params).fetchall()
-    return render_template("admin_users.html", user=current_user(), users=users, q=q)
+        total = db.execute(f"SELECT COUNT(*) {base_sql}{where}", tuple(params)).fetchone()[0]
+        users = db.execute(
+            f"SELECT * {base_sql}{where} ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            (*params, per_page, offset)
+        ).fetchall()
+
+    pagination = build_pagination_meta(total, page, per_page)
+    return render_template("admin_users.html", user=current_user(), users=users, q=q, pagination=pagination)
 
 @app.route("/admin/users/<int:user_id>/edit", methods=["GET","POST"])
 @admin_required
