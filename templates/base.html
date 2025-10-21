@@ -40,7 +40,20 @@
     <div><a href="{{ url_for('admin_home') }}" class="btn btn-light btn-sm">Ir para o Painel Admin</a></div>
   </div>
 </div>
+
+<li class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" id="admdd" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    Admin
+  </a>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="admdd">
+    <li><a class="dropdown-item" href="{{ url_for('admin_home') }}">Pendentes</a></li>
+    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">Usuários</a></li>
+    <li><a class="dropdown-item" href="{{ url_for('admin_cats') }}">Gatos</a></li>
+    <li><a class="dropdown-item" href="{{ url_for('admin_breeds') }}">Raças & Cores</a></li>
+  </ul>
+</li>
 {% endif %}
+  
 
 <div class="container my-4">
   {% with messages = get_flashed_messages(with_categories=true) %}
