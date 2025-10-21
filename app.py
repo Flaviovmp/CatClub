@@ -366,30 +366,38 @@ def admin_user_edit(user_id):
 def admin_cats():
     q = request.args.get("q","").strip()
     status = request.args.get("status","")
-    sql = """
-        SELECT c.*, u.name AS owner_name, b.name AS breed_name, col.name AS color_name, col.ems_code
+    page, per_page, offset = parse_pagination(default_per_page=20)
+
+    base_sql = """
         FROM cats c
         JOIN users u ON u.id = c.owner_id
         LEFT JOIN breeds b ON b.id = c.breed_id
         LEFT JOIN colors col ON col.id = c.color_id
     """
-    where, params = [], []
+    where_clauses, params = [], []
     if q:
-        where.append("(c.name LIKE ? OR u.name LIKE ? OR c.microchip LIKE ?)")
+        where_clauses.append("(c.name LIKE ? OR u.name LIKE ? OR c.microchip LIKE ?)")
         params += [f"%{q}%", f"%{q}%", f"%{q}%"]
     if status in ("pending","approved","rejected"):
-        where.append("c.status = ?")
+        where_clauses.append("c.status = ?")
         params.append(status)
-    if where:
-        sql += " WHERE " + " AND ".join(where)
-    sql += " ORDER BY c.created_at DESC"
+    where = f" WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
 
     with get_db() as db:
-        cats = db.execute(sql, params).fetchall()
-        # para o formulário de edição:
+        total = db.execute(f"SELECT COUNT(*) {base_sql}{where}", tuple(params)).fetchone()[0]
+        cats = db.execute(f"""
+            SELECT c.*, u.name AS owner_name, b.name AS breed_name, col.name AS color_name, col.ems_code
+            {base_sql}{where}
+            ORDER BY c.created_at DESC
+            LIMIT ? OFFSET ?
+        """, (*params, per_page, offset)).fetchall()
         breeds = db.execute("SELECT id, name FROM breeds ORDER BY name").fetchall()
         users = db.execute("SELECT id, name, email FROM users ORDER BY name").fetchall()
-    return render_template("admin_cats.html", user=current_user(), cats=cats, q=q, status=status, breeds=breeds, users=users)
+
+    pagination = build_pagination_meta(total, page, per_page)
+    return render_template("admin_cats.html", user=current_user(), cats=cats, q=q, status=status,
+                           breeds=breeds, users=users, pagination=pagination)
+
 
 @app.route("/admin/cats/<int:cat_id>/edit", methods=["GET","POST"])
 @admin_required
