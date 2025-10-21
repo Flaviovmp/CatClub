@@ -68,3 +68,15 @@ CREATE TABLE IF NOT EXISTS cats (
     FOREIGN KEY (dam_breed_id) REFERENCES breeds(id),
     FOREIGN KEY (dam_color_id) REFERENCES colors(id)
 );
+
+-- Tabela para reset de senha via token
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,           -- ISO8601 UTC
+    used INTEGER NOT NULL DEFAULT 0,    -- 0 = não usado, 1 = usado
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
