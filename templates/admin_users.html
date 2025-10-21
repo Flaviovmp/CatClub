@@ -45,3 +45,8 @@
 </nav>
 {% endif %}
 
+<form method="post" action="{{ url_for('admin_user_delete', user_id=u.id) }}" onsubmit="return confirm('Excluir este usuário? Esta ação não pode ser desfeita.');">
+  <button class="btn btn-outline-danger btn-sm" type="submit">Excluir</button>
+</form>
+
+
