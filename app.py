@@ -285,6 +285,77 @@ def cat_new():
 
     return render_template("cat_form.html", user=user, breeds=breeds)
 
+# ----- Admin: Breeds (Raças) -----
+@app.route("/admin/breeds")
+@admin_required
+def admin_breeds():
+    q = request.args.get("q","").strip()
+    sql = "SELECT * FROM breeds"
+    params = ()
+    if q:
+        sql += " WHERE name LIKE ?"
+        params = (f"%{q}%",)
+    sql += " ORDER BY name"
+    with get_db() as db:
+        breeds = db.execute(sql, params).fetchall()
+    return render_template("admin_breeds.html", user=current_user(), breeds=breeds, q=q)
+
+@app.route("/admin/breeds/new", methods=["GET","POST"])
+@admin_required
+def admin_breed_new():
+    if request.method == "POST":
+        name = request.form.get("name","").strip()
+        if not name:
+            flash("Informe o nome da raça.", "danger")
+            return redirect(url_for("admin_breed_new"))
+        try:
+            with get_db() as db:
+                db.execute("INSERT INTO breeds (name) VALUES (?)", (name,))
+                db.commit()
+            flash("Raça adicionada.", "success")
+            return redirect(url_for("admin_breeds"))
+        except sqlite3.IntegrityError:
+            flash("Essa raça já existe.", "warning")
+            return redirect(url_for("admin_breed_new"))
+    return render_template("admin_breed_form.html", user=current_user(), mode="new", breed=None)
+
+@app.route("/admin/breeds/<int:breed_id>/edit", methods=["GET","POST"])
+@admin_required
+def admin_breed_edit(breed_id):
+    with get_db() as db:
+        breed = db.execute("SELECT * FROM breeds WHERE id = ?", (breed_id,)).fetchone()
+        if not breed:
+            flash("Raça não encontrada.", "danger")
+            return redirect(url_for("admin_breeds"))
+    if request.method == "POST":
+        name = request.form.get("name","").strip()
+        if not name:
+            flash("Informe o nome da raça.", "danger")
+            return redirect(url_for("admin_breed_edit", breed_id=breed_id))
+        try:
+            with get_db() as db:
+                db.execute("UPDATE breeds SET name = ? WHERE id = ?", (name, breed_id))
+                db.commit()
+            flash("Raça atualizada.", "success")
+            return redirect(url_for("admin_breeds"))
+        except sqlite3.IntegrityError:
+            flash("Já existe uma raça com esse nome.", "warning")
+            return redirect(url_for("admin_breed_edit", breed_id=breed_id))
+    return render_template("admin_breed_form.html", user=current_user(), mode="edit", breed=breed)
+
+@app.route("/admin/breeds/<int:breed_id>/delete", methods=["POST"])
+@admin_required
+def admin_breed_delete(breed_id):
+    try:
+        with get_db() as db:
+            db.execute("DELETE FROM breeds WHERE id = ?", (breed_id,))
+            db.commit()
+        flash("Raça removida.", "success")
+    except sqlite3.IntegrityError:
+        flash("Não é possível remover: existem cores ou gatos vinculados.", "danger")
+    return redirect(url_for("admin_breeds"))
+
+
 @app.route("/admin")
 @admin_required
 def admin_home():
