@@ -361,6 +361,78 @@ def admin_user_edit(user_id):
         return redirect(url_for("admin_users"))
     return render_template("admin_user_form.html", user=current_user(), u=u)
 
+@app.route("/admin/users/<int:user_id>/reset-password", methods=["POST"])
+@admin_required
+def admin_user_reset_password(user_id):
+    # Gera token válido por 24h
+    with get_db() as db:
+        u = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not u:
+            flash("Usuário não encontrado.", "danger")
+            return redirect(url_for("admin_users"))
+
+        token = secrets.token_urlsafe(32)
+        expires = (datetime.utcnow() + timedelta(hours=24)).isoformat()
+        db.execute("""
+            INSERT INTO password_resets (user_id, token, expires_at, used)
+            VALUES (?, ?, ?, 0)
+        """, (user_id, token, expires))
+        db.commit()
+
+    base = url_base() or request.host_url  # fallback para host atual
+    reset_link = urljoin(base, f"/reset/{token}")
+
+    # Envia email (opcional)
+    body = f"Olá, {u['name']}!\n\nClique para definir uma nova senha:\n{reset_link}\n\nEste link expira em 24 horas."
+    send_email(u["email"], "Reset de senha", body)
+
+    flash(f"Link de reset gerado: {reset_link}", "success")
+    return redirect(url_for("admin_user_edit", user_id=user_id))
+
+
+@app.route("/reset/<token>", methods=["GET", "POST"])
+def reset_with_token(token):
+    with get_db() as db:
+        pr = db.execute("""
+            SELECT pr.*, u.email, u.name FROM password_resets pr
+            JOIN users u ON u.id = pr.user_id
+            WHERE pr.token = ?
+        """, (token,)).fetchone()
+    if not pr:
+        flash("Token inválido.", "danger")
+        return redirect(url_for("login"))
+
+    # Verifica expirado/usado
+    if pr["used"]:
+        flash("Este link já foi utilizado.", "warning")
+        return redirect(url_for("login"))
+    try:
+        expires = datetime.fromisoformat(pr["expires_at"])
+    except Exception:
+        expires = datetime.utcnow() - timedelta(seconds=1)
+    if datetime.utcnow() > expires:
+        flash("Este link expirou.", "warning")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        pw = request.form.get("password","")
+        pw2 = request.form.get("password2","")
+        if not pw or len(pw) < 6:
+            flash("Informe uma senha com pelo menos 6 caracteres.", "danger")
+            return redirect(url_for("reset_with_token", token=token))
+        if pw != pw2:
+            flash("As senhas não conferem.", "danger")
+            return redirect(url_for("reset_with_token", token=token))
+        with get_db() as db:
+            db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (generate_password_hash(pw), pr["user_id"]))
+            db.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (pr["id"],))
+            db.commit()
+        flash("Senha atualizada! Faça login com a nova senha.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("reset_password.html", user=current_user(), token=token, pr=pr)
+
+
 @app.route("/admin/users/<int:user_id>/delete", methods=["POST"])
 @admin_required
 def admin_user_delete(user_id):
