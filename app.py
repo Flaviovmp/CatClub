@@ -3,6 +3,59 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import sqlite3, os, re
 
+import secrets
+from datetime import timedelta
+from urllib.parse import urljoin
+
+def url_base():
+    # Tente deduzir a URL base a partir do HOST externo
+    return os.environ.get("APP_BASE_URL")  # ex.: https://seuapp.onrender.com
+
+def send_email(to, subject, body):
+    """Envio de email opcional (placeholder).
+    Produção: configure SENDGRID_API_KEY ou SMTP.
+    Aqui, por padrão, apenas "printa" no log do servidor para copiar o link.
+    """
+    print("=== EMAIL SIMULADO ===")
+    print("Para:", to)
+    print("Assunto:", subject)
+    print("Corpo:\n", body)
+    print("======================")
+    # Se quiser integrar SendGrid:
+    # import requests
+    # key = os.environ.get("SENDGRID_API_KEY")
+    # if key:
+    #   requests.post("https://api.sendgrid.com/v3/mail/send", headers=..., json=...)
+
+
+def parse_pagination(default_per_page=20, max_per_page=100):
+    try:
+        page = int(request.args.get("page", 1))
+    except ValueError:
+        page = 1
+    try:
+        per_page = int(request.args.get("per_page", default_per_page))
+    except ValueError:
+        per_page = default_per_page
+    per_page = max(1, min(per_page, max_per_page))
+    page = max(1, page)
+    offset = (page - 1) * per_page
+    return page, per_page, offset
+
+def build_pagination_meta(total, page, per_page):
+    from math import ceil
+    total_pages = max(1, ceil(total / per_page)) if total else 1
+    return {
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": total_pages,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+        "prev_page": page - 1 if page > 1 else None,
+        "next_page": page + 1 if page < total_pages else None,
+    }
+
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "catclub.db")
 
