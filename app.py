@@ -1,9 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import sqlite3
-import os
-import re
+import sqlite3, os, re
+
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "catclub.db")
 
@@ -247,6 +246,124 @@ def admin_home():
             ORDER BY c.created_at ASC
         """).fetchall()
     return render_template("admin_pending.html", user=current_user(), cats=pending)
+
+@app.route("/admin/users")
+@admin_required
+def admin_users():
+    q = request.args.get("q","").strip()
+    sql = "SELECT * FROM users"
+    params = ()
+    if q:
+        sql += " WHERE name LIKE ? OR email LIKE ?"
+        params = (f"%{q}%", f"%{q}%")
+    sql += " ORDER BY created_at DESC"
+    with get_db() as db:
+        users = db.execute(sql, params).fetchall()
+    return render_template("admin_users.html", user=current_user(), users=users, q=q)
+
+@app.route("/admin/users/<int:user_id>/edit", methods=["GET","POST"])
+@admin_required
+def admin_user_edit(user_id):
+    with get_db() as db:
+        u = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not u:
+            flash("Usuário não encontrado.", "danger")
+            return redirect(url_for("admin_users"))
+    if request.method == "POST":
+        form = request.form
+        fields = ["name","dob","sex","cpf","email","phone","address","address2","district","city","state","zipcode","country"]
+        values = [form.get(k,"").strip() for k in fields]
+
+        # validações básicas (ajuste se já tiver helpers)
+        def only_digits(s): return "".join(ch for ch in (s or "") if ch.isdigit())
+        def validate_cep(cep_raw): 
+            import re
+            return (not cep_raw) or bool(re.fullmatch(r"\d{5}-?\d{3}", cep_raw.strip()))
+
+        if values[11] and not validate_cep(values[11]):  # CEP
+            flash("CEP inválido. Use 00000-000.", "danger"); 
+            return redirect(url_for("admin_user_edit", user_id=user_id))
+
+        is_admin = 1 if form.get("is_admin") == "on" else 0
+        try:
+            with get_db() as db:
+                db.execute("""
+                    UPDATE users SET
+                    name=?, dob=?, sex=?, cpf=?, email=?, phone=?, address=?, address2=?, district=?, city=?, state=?, zipcode=?, country=?, is_admin=?
+                    WHERE id = ?
+                """, (*values, is_admin, user_id))
+                db.commit()
+            flash("Usuário atualizado.", "success")
+        except sqlite3.IntegrityError:
+            flash("Já existe um usuário com este email.", "danger")
+        return redirect(url_for("admin_users"))
+    return render_template("admin_user_form.html", user=current_user(), u=u)
+
+@app.route("/admin/cats")
+@admin_required
+def admin_cats():
+    q = request.args.get("q","").strip()
+    status = request.args.get("status","")
+    sql = """
+        SELECT c.*, u.name AS owner_name, b.name AS breed_name, col.name AS color_name, col.ems_code
+        FROM cats c
+        JOIN users u ON u.id = c.owner_id
+        LEFT JOIN breeds b ON b.id = c.breed_id
+        LEFT JOIN colors col ON col.id = c.color_id
+    """
+    where, params = [], []
+    if q:
+        where.append("(c.name LIKE ? OR u.name LIKE ? OR c.microchip LIKE ?)")
+        params += [f"%{q}%", f"%{q}%", f"%{q}%"]
+    if status in ("pending","approved","rejected"):
+        where.append("c.status = ?")
+        params.append(status)
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY c.created_at DESC"
+
+    with get_db() as db:
+        cats = db.execute(sql, params).fetchall()
+        # para o formulário de edição:
+        breeds = db.execute("SELECT id, name FROM breeds ORDER BY name").fetchall()
+        users = db.execute("SELECT id, name, email FROM users ORDER BY name").fetchall()
+    return render_template("admin_cats.html", user=current_user(), cats=cats, q=q, status=status, breeds=breeds, users=users)
+
+@app.route("/admin/cats/<int:cat_id>/edit", methods=["GET","POST"])
+@admin_required
+def admin_cat_edit(cat_id):
+    with get_db() as db:
+        cat = db.execute("SELECT * FROM cats WHERE id = ?", (cat_id,)).fetchone()
+        if not cat:
+            flash("Gato não encontrado.", "danger")
+            return redirect(url_for("admin_cats"))
+        breeds = db.execute("SELECT id, name FROM breeds ORDER BY name").fetchall()
+        colors = db.execute("SELECT id, name, ems_code FROM colors WHERE breed_id = ? ORDER BY name", (cat["breed_id"],)).fetchall()
+        users = db.execute("SELECT id, name FROM users ORDER BY name").fetchall()
+    if request.method == "POST":
+        f = request.form
+        with get_db() as db:
+            db.execute("""
+                UPDATE cats SET
+                  owner_id=?, name=?, breed_id=?, color_id=?, dob=?, registry_number=?, registry_entity=?,
+                  microchip=?, sex=?, neutered=?, breeder_type=?, breeder_name=?,
+                  sire_name=?, sire_breed_id=?, sire_color_id=?,
+                  dam_name=?, dam_breed_id=?, dam_color_id=?, status=?
+                WHERE id = ?
+            """, (
+                f.get("owner_id"), f.get("name","").strip(), f.get("breed_id"), f.get("color_id"),
+                f.get("dob") or None, f.get("registry_number","").strip(), f.get("registry_entity","").strip(),
+                f.get("microchip","").strip(), f.get("sex","").strip(), 1 if f.get("neutered") == "SIM" else 0,
+                f.get("breeder_type","").strip(), f.get("breeder_name","").strip(),
+                f.get("sire_name","").strip(), f.get("sire_breed_id") or None, f.get("sire_color_id") or None,
+                f.get("dam_name","").strip(), f.get("dam_breed_id") or None, f.get("dam_color_id") or None,
+                f.get("status","pending"), cat_id
+            ))
+            db.commit()
+        flash("Gato atualizado.", "success")
+        return redirect(url_for("admin_cats"))
+    return render_template("admin_cat_form.html", user=current_user(), cat=cat, breeds=breeds, colors=colors, users=users)
+
 
 @app.route("/admin/cats/<int:cat_id>/<action>", methods=["POST"])
 @admin_required
