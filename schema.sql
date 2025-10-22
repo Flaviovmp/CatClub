@@ -1,0 +1,80 @@
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    dob TEXT,
+    sex TEXT,
+    cpf TEXT,
+    email TEXT UNIQUE NOT NULL,
+    phone TEXT,
+    address TEXT,
+    address2 TEXT,
+    district TEXT,
+    city TEXT,
+    state TEXT,
+    zipcode TEXT,
+    country TEXT,
+    password_hash TEXT NOT NULL,
+    is_admin INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS breeds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS colors (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    breed_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    ems_code TEXT NOT NULL,
+    UNIQUE(breed_id, name),
+    FOREIGN KEY (breed_id) REFERENCES breeds(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS cats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    breed_id INTEGER NOT NULL,
+    color_id INTEGER NOT NULL,
+    dob TEXT,
+    registry_number TEXT,
+    registry_entity TEXT,
+    microchip TEXT,
+    sex TEXT NOT NULL,
+    neutered INTEGER NOT NULL DEFAULT 0,
+    breeder_type TEXT,
+    breeder_name TEXT,
+
+    sire_name TEXT,
+    sire_breed_id INTEGER,
+    sire_color_id INTEGER,
+
+    dam_name TEXT,
+    dam_breed_id INTEGER,
+    dam_color_id INTEGER,
+
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at TEXT DEFAULT (datetime('now')),
+
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (breed_id) REFERENCES breeds(id),
+    FOREIGN KEY (color_id) REFERENCES colors(id),
+    FOREIGN KEY (sire_breed_id) REFERENCES breeds(id),
+    FOREIGN KEY (sire_color_id) REFERENCES colors(id),
+    FOREIGN KEY (dam_breed_id) REFERENCES breeds(id),
+    FOREIGN KEY (dam_color_id) REFERENCES colors(id)
+);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

@@ -1,0 +1,1 @@
+<h3>Pendentes</h3>{% for c in cats %}<div>{{ c.name }} <form method='post' action='{{ url_for("admin_cat_action", cat_id=c.id, action="approve") }}'><button>Aprovar</button></form></div>{% endfor %}

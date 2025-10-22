@@ -1,0 +1,1 @@
+<h3>Meus gatos</h3>{% for c in cats %}<div>{{ c.name }} - {{ c.breed_name }} - {{ c.color_name }}</div>{% endfor %}<p><a href='{{ url_for("cat_new") }}'>Novo gato</a></p>
