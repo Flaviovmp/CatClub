@@ -1,1 +1,127 @@
-<h3>Gatos</h3>
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Gatos</h1>
+
+  <form class="row g-2 align-items-center" method="get" action="{{ url_for('admin_cats') }}">
+    <div class="col-auto">
+      <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Buscar por gato, dono, microchip">
+    </div>
+
+    <div class="col-auto">
+      <select class="form-select" name="status" aria-label="Filtrar por status">
+        <option value="" {% if not status %}selected{% endif %}>Todos (status)</option>
+        <option value="pending"  {% if status == 'pending' %}selected{% endif %}>Pendentes</option>
+        <option value="approved" {% if status == 'approved' %}selected{% endif %}>Aprovados</option>
+        <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejeitados</option>
+      </select>
+    </div>
+
+    <div class="col-auto">
+      <select class="form-select" name="breed_id" aria-label="Filtrar por raça">
+        <option value="">Todas as raças</option>
+        {% for b in breeds %}
+          <option value="{{ b.id }}" {% if breed_id and b.id|string == breed_id|string %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-auto">
+      <select class="form-select" name="owner_id" aria-label="Filtrar por dono">
+        <option value="">Todos os donos</option>
+        {% for u in users %}
+          <option value="{{ u.id }}" {% if owner_id and u.id|string == owner_id|string %}selected{% endif %}>{{ u.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-auto">
+      <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+    </div>
+
+    {% if q or status or breed_id or owner_id %}
+    <div class="col-auto">
+      <a class="btn btn-outline-dark" href="{{ url_for('admin_cats') }}">Limpar</a>
+    </div>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card p-2">
+  <div class="table-responsive">
+    <table class="table align-middle table-sm">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Dono</th>
+          <th>Raça</th>
+          <th>Cor (EMS)</th>
+          <th>Nasc.</th>
+          <th>Status</th>
+          <th style="width: 220px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in cats %}
+        <tr>
+          <td class="fw-medium">{{ c.name }}</td>
+          <td>{{ c.owner_name }}</td>
+          <td>{{ c.breed_name or '-' }}</td>
+          <td>
+            {{ c.color_name or '-' }}{% if c.ems_code %} <span class="text-muted">({{ c.ems_code }})</span>{% endif %}
+          </td>
+          <td>{{ c.dob or '-' }}</td>
+          <td>
+            {% if c.status == 'pending' %}
+              <span class="badge bg-warning text-dark">Pendente</span>
+            {% elif c.status == 'approved' %}
+              <span class="badge bg-success">Aprovado</span>
+            {% elif c.status == 'rejected' %}
+              <span class="badge bg-danger">Rejeitado</span>
+            {% else %}
+              <span class="badge bg-secondary">{{ c.status }}</span>
+            {% endif %}
+          </td>
+          <td class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('admin_cat_edit', cat_id=c.id) }}">Editar</a>
+            <form method="post"
+                  action="{{ url_for('admin_cat_delete', cat_id=c.id) }}"
+                  onsubmit="return confirm('Tem certeza que deseja excluir este gato?');">
+              <button class="btn btn-outline-danger btn-sm" type="submit">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-muted">
+            Nenhum registro encontrado
+            {% if q %} para “{{ q }}”{% endif %}
+            {% if status %} com status “{{ status }}”{% endif %}
+            {% if breed_id %} na raça selecionada{% endif %}
+            {% if owner_id %} para o dono selecionado{% endif %}.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination and (pagination.total_pages > 1) %}
+  <nav class="mt-2">
+    <ul class="pagination mb-0">
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link"
+           href="?q={{ q }}&status={{ status }}&breed_id={{ breed_id }}&owner_id={{ owner_id }}&page={{ pagination.prev_page or 1 }}">Anterior</a>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">Página {{ pagination.page }} de {{ pagination.total_pages }}</span>
+      </li>
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link"
+           href="?q={{ q }}&status={{ status }}&breed_id={{ breed_id }}&owner_id={{ owner_id }}&page={{ pagination.next_page or pagination.page }}">Próxima</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}
