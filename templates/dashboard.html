@@ -1,1 +1,42 @@
-<h3>Meus gatos</h3>{% for c in cats %}<div>{{ c.name }} - {{ c.breed_name }} - {{ c.color_name }}</div>{% endfor %}<p><a href='{{ url_for("cat_new") }}'>Novo gato</a></p>
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h5">Olá, {{ user.name.split(' ')[0] }}!</h1>
+  <a class="btn btn-primary" href="{{ url_for('cat_new') }}">Cadastrar novo gato</a>
+</div>
+
+<div class="card p-3">
+  <h2 class="h6 mb-3">Meus gatos</h2>
+  {% if cats %}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead><tr>
+        <th>Nome</th><th>Raça</th><th>Cor / EMS</th><th>Sexo</th><th>Registro</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+      {% for c in cats %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.breed_name }}</td>
+          <td>{{ c.color_name }} <small class="text-muted">({{ c.ems_code }})</small></td>
+          <td>{{ c.sex }}</td>
+          <td>{{ c.registry_number }} <small class="text-muted">{{ c.registry_entity }}</small></td>
+          <td>
+            {% if c.status == 'pending' %}
+              <span class="badge text-bg-warning">Pendente</span>
+            {% elif c.status == 'approved' %}
+              <span class="badge text-bg-success">Aprovado</span>
+            {% else %}
+              <span class="badge text-bg-danger">Rejeitado</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-muted">Você ainda não cadastrou nenhum gato.</p>
+  {% endif %}
+</div>
+{% endblock %}
