@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from urllib.parse import urljoin
 import sqlite3, os, re, secrets, csv
 from io import TextIOWrapper
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "catclub.db")
 UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]
@@ -54,6 +56,23 @@ def build_pagination_meta(total, page, per_page):
             "has_prev": page > 1, "has_next": page < total_pages,
             "prev_page": page - 1 if page > 1 else None,
             "next_page": page + 1 if page < total_pages else None}
+
+def _paginate(query, page, per_page=20):
+    total = query.count()
+    total_pages = (total + per_page - 1) // per_page if total else 1
+    page = max(1, min(page, total_pages))  # evita out-of-range
+    items = query.offset((page - 1) * per_page).limit(per_page).all()
+    pagination = {
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "total_pages": total_pages,
+        "has_prev": page > 1,
+        "has_next": page < total_pages,
+        "prev_page": page - 1 if page > 1 else None,
+        "next_page": page + 1 if page < total_pages else None,
+    }
+    return items, pagination
 
 def send_email(to, subject, body):
     print("=== EMAIL SIMULADO ==="); print("Para:", to); print("Assunto:", subject); print("Corpo:\n", body); print("======================")
@@ -498,6 +517,9 @@ def reset_with_token(token):
 def admin_cats():
     q = request.args.get("q","").strip()
     status = request.args.get("status","")
+    breed_id = (request.args.get("breed_id") or "").strip()
+    owner_id = (request.args.get("owner_id") or "").strip()
+    page = request.args.get("page", 1, type=int)
     page, per_page, offset = parse_pagination(default_per_page=20)
     base_sql = """
         FROM cats c
@@ -521,7 +543,75 @@ def admin_cats():
         users = db.execute("SELECT id, name, email FROM users ORDER BY name").fetchall()
     pagination = build_pagination_meta(total, page, per_page)
     return render_template("admin_cats.html", user=current_user(), cats=cats, q=q, status=status, breeds=breeds, users=users, pagination=pagination)
+# Base query: juntando com User/Breed/Color para facilitar exibição
+    query = (
+        db.session.query(Cat)
+        .options(
+            joinedload(Cat.owner),
+            joinedload(Cat.breed),
+            joinedload(Cat.color),
+        )
+        .order_by(Cat.created_at.desc())
+    )
 
+    # Busca textual
+    if q:
+        like = f"%{q}%"
+        query = query.filter(
+            or_(
+                Cat.name.ilike(like),
+                Cat.microchip.ilike(like),
+                Cat.registry_number.ilike(like),
+                User.name.ilike(like),
+            )
+        ).join(User, Cat.owner)  # join necessário para filtrar por nome do dono
+
+    # Filtro por status
+    if status in {"pending", "approved", "rejected"}:
+        query = query.filter(Cat.status == status)
+
+    # Filtro por raça
+    if breed_id.isdigit():
+        query = query.filter(Cat.breed_id == int(breed_id))
+
+    # Filtro por dono
+    if owner_id.isdigit():
+        query = query.filter(Cat.owner_id == int(owner_id))
+
+    # Paginação
+    cats, pagination = _paginate(query, page, per_page=20)
+
+    # Monta os dados esperados pelo template (owner_name, breed_name etc.)
+    rows = []
+    for c in cats:
+        rows.append({
+            "id": c.id,
+            "name": c.name,
+            "owner_name": c.owner.name if c.owner else "-",
+            "breed_name": c.breed.name if c.breed else None,
+            "color_name": c.color.name if c.color else None,
+            "ems_code": c.color.ems_code if c.color else None,
+            "dob": c.dob.isoformat() if getattr(c, "dob", None) else None,
+            "status": c.status,
+        })
+
+    # Dropdowns para filtros
+    all_breeds = db.session.query(Breed).order_by(Breed.name.asc()).all()
+    all_users = db.session.query(User).order_by(User.name.asc()).all()
+
+    return render_template(
+        "admin_cats.html",
+        cats=rows,
+        q=q,
+        status=status,
+        breed_id=breed_id,
+        owner_id=owner_id,
+        breeds=all_breeds,
+        users=all_users,
+        pagination=pagination,
+        user=g.user,  # se você injeta o usuário atual no template
+    )
+    
 @app.route("/admin/cats/<int:cat_id>/edit", methods=["GET","POST"])
 @admin_required_view
 def admin_cat_edit(cat_id):
