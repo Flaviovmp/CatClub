@@ -1,11 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.exceptions import Forbidden
 from datetime import datetime, timedelta
 from urllib.parse import urljoin
 import sqlite3, os, re, secrets, csv
 from io import TextIOWrapper
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "catclub.db")
 UF_LIST = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"]
@@ -77,6 +79,11 @@ def _paginate(query, page, per_page=20):
 def send_email(to, subject, body):
     print("=== EMAIL SIMULADO ==="); print("Para:", to); print("Assunto:", subject); print("Corpo:\n", body); print("======================")
 
+# ===== Helper: serializer para tokens de reset (expira em 24h por padrão) =====
+def _reset_serializer():
+    # SECRET_KEY deve estar definido na app
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt="password-reset")
+    
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
@@ -437,6 +444,37 @@ def admin_users():
         users = db.execute(f"SELECT * {base_sql}{where} ORDER BY created_at DESC LIMIT ? OFFSET ?", (*params, per_page, offset)).fetchall()
     pagination = build_pagination_meta(total, page, per_page)
     return render_template("admin_users.html", user=current_user(), users=users, q=q, pagination=pagination)
+
+ query = db.session.query(User).order_by(User.created_at.desc())
+
+    if q:
+        like = f"%{q}%"
+        query = query.filter(or_(User.name.ilike(like), User.email.ilike(like)))
+
+    if is_admin == "1":
+        query = query.filter(User.is_admin.is_(True))
+    elif is_admin == "0":
+        query = query.filter(User.is_admin.is_(False))
+
+    users, pagination = _paginate(query, page, per_page=20)
+
+    # Monte os dados que o template espera (se já não for igual)
+    rows = [{
+        "id": u.id,
+        "name": u.name,
+        "email": u.email,
+        "is_admin": bool(u.is_admin),
+        "created_at": getattr(u, "created_at", None),
+    } for u in users]
+
+    return render_template(
+        "admin_users.html",
+        users=rows,
+        q=q,
+        is_admin=is_admin,
+        pagination=pagination,
+        user=g.user,  # remova se você não usa 'g.user' no base.html
+    )
 
 @app.route("/admin/users/<int:user_id>/edit", methods=["GET","POST"])
 @admin_required_view
