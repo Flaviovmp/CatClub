@@ -1,1 +1,37 @@
-<h3>Pendentes</h3>{% for c in cats %}<div>{{ c.name }} <form method='post' action='{{ url_for("admin_cat_action", cat_id=c.id, action="approve") }}'><button>Aprovar</button></form></div>{% endfor %}
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h5 mb-3">Pendentes de aprovação</h1>
+<div class="card p-3">
+  {% if cats %}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead><tr>
+        <th>Gato</th><th>Raça</th><th>Cor / EMS</th><th>Dono</th><th>Sexo</th><th>Registro</th><th>Ação</th>
+      </tr></thead>
+      <tbody>
+        {% for c in cats %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.breed_name }}</td>
+          <td>{{ c.color_name }} <small class="text-muted">({{ c.ems_code }})</small></td>
+          <td>{{ c.owner_name }}</td>
+          <td>{{ c.sex }}</td>
+          <td>{{ c.registry_number }} <small class="text-muted">{{ c.registry_entity }}</small></td>
+          <td class="d-flex gap-2">
+            <form method="post" action="{{ url_for('admin_cat_action', cat_id=c.id, action='approve') }}">
+              <button class="btn btn-success btn-sm" type="submit">Aprovar</button>
+            </form>
+            <form method="post" action="{{ url_for('admin_cat_action', cat_id=c.id, action='reject') }}">
+              <button class="btn btn-danger btn-sm" type="submit">Rejeitar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-muted">Nenhum registro pendente.</p>
+  {% endif %}
+</div>
+{% endblock %}
