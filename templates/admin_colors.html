@@ -1,1 +1,45 @@
-<h3>Cores — {{ breed.name }}</h3>
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 mb-0">Cores — {{ breed.name }}</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary" href="{{ url_for('admin_breeds') }}">Voltar às raças</a>
+    <a class="btn btn-primary" href="{{ url_for('admin_color_new', breed_id=breed.id) }}">Nova cor</a>
+  </div>
+</div>
+
+<div class="card p-2">
+  <div class="table-responsive">
+    <table class="table align-middle table-sm">
+      <thead>
+        <tr>
+          <th>Cor</th>
+          <th>EMS</th>
+          <th style="width: 240px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in colors %}
+        <tr>
+          <td class="fw-medium">{{ c.name }}</td>
+          <td><code>{{ c.ems_code }}</code></td>
+          <td class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-secondary btn-sm"
+               href="{{ url_for('admin_color_edit', color_id=c.id) }}">Editar</a>
+            <form method="post"
+                  action="{{ url_for('admin_color_delete', color_id=c.id) }}"
+                  onsubmit="return confirm('Tem certeza que deseja excluir esta cor?');">
+              <button class="btn btn-outline-danger btn-sm" type="submit">Excluir</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3" class="text-muted">Nenhuma cor cadastrada para esta raça.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
