@@ -1,1 +1,104 @@
-<form method='post'><input name='name' value='{{ u.name }}'><input name='email' value='{{ u.email }}'><input type='checkbox' name='is_admin' {% if u.is_admin %}checked{% endif %}><button>Salvar</button></form>
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10 col-xl-9">
+    <div class="card p-4">
+      <h1 class="h5 mb-3">Editar associado</h1>
+
+      <form method="post">
+        <!-- DADOS PESSOAIS -->
+        <div class="form-section">
+          <h6>Dados pessoais</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nome completo</label>
+              <input class="form-control" type="text" name="name" value="{{ u.name or '' }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Data de nascimento</label>
+              <input class="form-control" type="date" name="dob" value="{{ u.dob or '' }}">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Sexo</label>
+              <select class="form-select" name="sex">
+                <option value="">Selecione...</option>
+                <option value="Feminino" {% if u.sex == 'Feminino' %}selected{% endif %}>Feminino</option>
+                <option value="Masculino" {% if u.sex == 'Masculino' %}selected{% endif %}>Masculino</option>
+                <option value="Outro" {% if u.sex == 'Outro' %}selected{% endif %}>Outro</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">CPF</label>
+              <input class="form-control" type="text" name="cpf" value="{{ u.cpf or '' }}" placeholder="000.000.000-00">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Email</label>
+              <input class="form-control" type="email" name="email" value="{{ u.email or '' }}" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Celular</label>
+              <input class="form-control" type="text" name="phone" value="{{ u.phone or '' }}" placeholder="(00) 90000-0000">
+            </div>
+          </div>
+        </div>
+
+        <!-- ENDEREÇO -->
+        <div class="form-section">
+          <h6>Endereço</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Endereço</label>
+              <input class="form-control" type="text" name="address" value="{{ u.address or '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Complemento</label>
+              <input class="form-control" type="text" name="address2" value="{{ u.address2 or '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Bairro</label>
+              <input class="form-control" type="text" name="district" value="{{ u.district or '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Cidade</label>
+              <input class="form-control" type="text" name="city" value="{{ u.city or '' }}">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Estado</label>
+              <select class="form-select" name="state">
+                <option value="">Selecione...</option>
+                {% for uf in ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'] %}
+                <option value="{{ uf }}" {% if u.state == uf %}selected{% endif %}>{{ uf }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">CEP</label>
+              <input class="form-control" type="text" name="zipcode" value="{{ u.zipcode or '' }}" placeholder="00000-000">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">País</label>
+              <input class="form-control" type="text" name="country" value="{{ u.country or 'Brasil' }}">
+            </div>
+          </div>
+        </div>
+
+        <!-- PERFIL -->
+        <div class="form-section">
+          <h6>Perfil de acesso</h6>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="is_admin" name="is_admin" {% if u.is_admin %}checked{% endif %}>
+            <label class="form-check-label" for="is_admin">Usuário é administrador</label>
+          </div>
+          <div class="form-text">Administradores têm acesso ao painel completo, incluindo aprovação de gatos e cadastro de raças/cores.</div>
+        </div>
+
+        <!-- BOTÕES -->
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-primary" type="submit">Salvar alterações</button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('admin_users') }}">Voltar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
