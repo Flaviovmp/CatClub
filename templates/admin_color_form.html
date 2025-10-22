@@ -1,1 +1,39 @@
-<form method='post'><input name='name'><input name='ems_code'><button>Salvar</button></form>
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    <div class="card p-4">
+      {% if mode == 'new' %}
+        <h1 class="h5 mb-3">Nova cor</h1>
+      {% else %}
+        <h1 class="h5 mb-3">Editar cor</h1>
+      {% endif %}
+
+      <form method="post">
+        <div class="mb-3">
+          <label for="color_name" class="form-label">Nome da cor</label>
+          <input id="color_name" class="form-control" type="text" name="name" required
+                 value="{{ color.name if color else '' }}" placeholder="Ex: Blue, Seal Point, Golden Shaded">
+        </div>
+
+        <div class="mb-3">
+          <label for="ems_code" class="form-label">Código EMS</label>
+          <input id="ems_code" class="form-control" type="text" name="ems_code" required
+                 value="{{ color.ems_code if color else '' }}" placeholder="Ex: BSH a, RAG n, MCO n 22">
+          <div class="form-text">
+            O EMS identifica raça/cor/padrão. Exemplos: <code>BSH a</code> (British Shorthair azul),
+            <code>RAG n</code> (Ragdoll seal), <code>MCO n 22</code> (Maine Coon brown classic tabby).
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-primary" type="submit">
+            {% if mode == 'new' %}Salvar cor{% else %}Atualizar{% endif %}
+          </button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('admin_colors', breed_id=breed_id) }}">Voltar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
