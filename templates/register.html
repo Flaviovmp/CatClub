@@ -1,1 +1,102 @@
-<form method='post'><input name='name'><input name='email' type='email'><input name='password' type='password'><input name='password2' type='password'><button>Enviar</button></form>
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10 col-xl-9">
+    <div class="card p-4">
+      <h1 class="h4 mb-3">Cadastro de associado</h1>
+      <form method="post">
+        <h6 class="mt-3">Dados pessoais</h6>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nome</label>
+            <input class="form-control" type="text" name="name" required>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Data de nascimento</label>
+            <input class="form-control" type="date" name="dob">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Sexo</label>
+            <select class="form-select" name="sex">
+              <option value="">Selecione...</option>
+              <option>Feminino</option>
+              <option>Masculino</option>
+              <option>Outro</option>
+              <option>Prefiro não informar</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">CPF</label>
+            <input class="form-control" type="text" name="cpf" placeholder="000.000.000-00" pattern="\d{3}\.\d{3}\.\d{3}-\d{2}|\d{11}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Email</label>
+            <input class="form-control" type="email" name="email" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Celular</label>
+            <input class="form-control" type="text" name="phone" placeholder="(00) 90000-0000">
+          </div>
+        </div>
+
+        <h6 class="mt-4">Endereço</h6>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Endereço</label>
+            <input class="form-control" type="text" name="address">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Complemento</label>
+            <input class="form-control" type="text" name="address2">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Bairro</label>
+            <input class="form-control" type="text" name="district">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Cidade</label>
+            <input class="form-control" type="text" name="city">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Estado (UF)</label>
+            <select class="form-select" name="state">
+              <option value="">Selecione...</option>
+              <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
+              <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+              <option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option>
+              <option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+              <option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+              <option>SE</option><option>TO</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">CEP</label>
+            <input class="form-control" type="text" name="zipcode" placeholder="00000-000" pattern="\d{5}-\d{3}|\d{8}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">País</label>
+            <input class="form-control" type="text" name="country" value="Brasil">
+          </div>
+        </div>
+
+        <h6 class="mt-4">Dados de acesso</h6>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Senha</label>
+            <input class="form-control" type="password" name="password" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Confirmar senha</label>
+            <input class="form-control" type="password" name="password2" required>
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-primary" type="submit">Cadastrar</button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('index') }}">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
