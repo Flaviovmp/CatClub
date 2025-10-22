@@ -3,135 +3,182 @@
 <div class="row justify-content-center">
   <div class="col-lg-10 col-xl-9">
     <div class="card p-4">
-      <h1 class="h5 mb-3">Cadastro de gato</h1>
+      <h1 class="h5 mb-3">
+        {% if cat %}Editar gato{% else %}Cadastrar novo gato{% endif %}
+      </h1>
+
       <form method="post">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">Nome do gato</label>
-            <input class="form-control" type="text" name="name" required>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Raça</label>
-            <select class="form-select" id="breed_id" name="breed_id" onchange="loadColors('breed_id','color_id','ems_code_span')" required>
-              <option value="">Selecione...</option>
-              {% for b in breeds %}
-              <option value="{{ b.id }}">{{ b.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Cor</label>
-            <select class="form-select" id="color_id" name="color_id" required>
-              <option value="">Selecione a raça primeiro</option>
-            </select>
-            <small class="text-muted">EMS: <span id="ems_code_span"></span></small>
-          </div>
+        <!-- DADOS DO GATO -->
+        <div class="form-section">
+          <h6>Dados do gato</h6>
+          <div class="row g-3">
+            <div class="col-md-5">
+              <label class="form-label">Nome</label>
+              <input class="form-control" type="text" name="name" value="{{ cat.name or '' }}" required>
+            </div>
 
-          <div class="col-md-3">
-            <label class="form-label">Data de nascimento</label>
-            <input class="form-control" type="date" name="dob">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Registro</label>
-            <input class="form-control" type="text" name="registry_number" placeholder="Número">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Entidade</label>
-            <select class="form-select" name="registry_entity">
-              <option value="">Selecione...</option>
-              <option>FIFE Brasil</option>
-              <option>FIFE não Brasil</option>
-              <option>não FIFE</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Microchip</label>
-            <input class="form-control" type="text" name="microchip">
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Sexo</label>
-            <select class="form-select" name="sex" required>
-              <option value="">Selecione...</option>
-              <option>Macho</option>
-              <option>Fêmea</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Castrado</label>
-            <select class="form-select" name="neutered">
-              <option>NÃO</option>
-              <option>SIM</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Criador</label>
-            <select class="form-select" id="breeder_type" name="breeder_type" onchange="toggleBreederName()">
-              <option value="eu">Eu mesmo</option>
-              <option value="outro">Outro</option>
-            </select>
-          </div>
-          <div class="col-md-6" id="breeder_name_group" style="display:none;">
-            <label class="form-label">Nome do criador</label>
-            <input class="form-control" type="text" name="breeder_name">
+            <div class="col-md-3">
+              <label class="form-label">Raça</label>
+              <select id="breed_id" name="breed_id" class="form-select"
+                      onchange="loadColors('breed_id','color_id','ems_code_display')" required>
+                <option value="">Selecione...</option>
+                {% for b in breeds %}
+                <option value="{{ b.id }}" {% if cat and cat.breed_id==b.id %}selected{% endif %}>{{ b.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Cor</label>
+              <select id="color_id" name="color_id" class="form-select" required>
+                <option value="">Selecione a raça primeiro</option>
+              </select>
+            </div>
+
+            <div class="col-md-1">
+              <label class="form-label">EMS</label>
+              <div id="ems_code_display" class="form-control bg-light text-muted"></div>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Data de nascimento</label>
+              <input class="form-control" type="date" name="dob" value="{{ cat.dob or '' }}">
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Sexo</label>
+              <select class="form-select" name="sex">
+                <option value="">Selecione...</option>
+                <option value="Macho" {% if cat.sex=='Macho' %}selected{% endif %}>Macho</option>
+                <option value="Fêmea" {% if cat.sex=='Fêmea' %}selected{% endif %}>Fêmea</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Castrado</label>
+              <select class="form-select" name="neutered">
+                <option value="">Selecione...</option>
+                <option value="SIM" {% if cat.neutered=='SIM' %}selected{% endif %}>Sim</option>
+                <option value="NÃO" {% if cat.neutered=='NÃO' %}selected{% endif %}>Não</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Microchip</label>
+              <input class="form-control" type="text" name="microchip" value="{{ cat.microchip or '' }}">
+            </div>
           </div>
         </div>
 
-        <hr class="my-4">
-
-        <h6>Pai</h6>
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Nome do pai</label>
-            <input class="form-control" type="text" name="sire_name">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Raça do pai</label>
-            <select class="form-select" id="sire_breed_id" name="sire_breed_id" onchange="loadColors('sire_breed_id','sire_color_id','sire_ems_span')">
-              <option value="">Selecione...</option>
-              {% for b in breeds %}
-              <option value="{{ b.id }}">{{ b.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Cor do pai</label>
-            <select class="form-select" id="sire_color_id" name="sire_color_id">
-              <option value="">Selecione a raça primeiro</option>
-            </select>
-            <small class="text-muted">EMS: <span id="sire_ems_span"></span></small>
+        <!-- REGISTRO -->
+        <div class="form-section">
+          <h6>Registro</h6>
+          <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+              <label class="form-label">Número de registro</label>
+              <input class="form-control" type="text" name="registration_number" value="{{ cat.registration_number or '' }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Entidade</label>
+              <select class="form-select" name="registration_entity">
+                <option value="">Selecione...</option>
+                <option value="FIFE Brasil" {% if cat.registration_entity=='FIFE Brasil' %}selected{% endif %}>FIFE Brasil</option>
+                <option value="FIFE não Brasil" {% if cat.registration_entity=='FIFE não Brasil' %}selected{% endif %}>FIFE não Brasil</option>
+                <option value="Não FIFE" {% if cat.registration_entity=='Não FIFE' %}selected{% endif %}>Não FIFE</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <h6 class="mt-3">Mãe</h6>
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Nome da mãe</label>
-            <input class="form-control" type="text" name="dam_name">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Raça da mãe</label>
-            <select class="form-select" id="dam_breed_id" name="dam_breed_id" onchange="loadColors('dam_breed_id','dam_color_id','dam_ems_span')">
-              <option value="">Selecione...</option>
-              {% for b in breeds %}
-              <option value="{{ b.id }}">{{ b.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Cor da mãe</label>
-            <select class="form-select" id="dam_color_id" name="dam_color_id">
-              <option value="">Selecione a raça primeiro</option>
-            </select>
-            <small class="text-muted">EMS: <span id="dam_ems_span"></span></small>
+        <!-- CRIADOR -->
+        <div class="form-section">
+          <h6>Criador</h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Criador</label>
+              <select id="breeder_option" name="breeder_option" class="form-select"
+                      onchange="toggleBreederName()">
+                <option value="eu" {% if cat.breeder_option=='eu' %}selected{% endif %}>Eu mesmo</option>
+                <option value="outro" {% if cat.breeder_option=='outro' %}selected{% endif %}>Outro</option>
+              </select>
+            </div>
+            <div class="col-md-8" id="breeder_name_group" style="display:none;">
+              <label class="form-label">Nome do criador</label>
+              <input class="form-control" type="text" name="breeder_name" value="{{ cat.breeder_name or '' }}">
+            </div>
           </div>
         </div>
 
+        <!-- GENÉTICA (PAIS) -->
+        <div class="form-section">
+          <h6>Filiação</h6>
+          <div class="row g-3">
+            <!-- PAI -->
+            <div class="col-12"><strong>Pai</strong></div>
+            <div class="col-md-4">
+              <input class="form-control" type="text" name="father_name" value="{{ cat.father_name or '' }}" placeholder="Nome do pai">
+            </div>
+            <div class="col-md-3">
+              <select id="father_breed_id" name="father_breed_id" class="form-select"
+                      onchange="loadColors('father_breed_id','father_color_id','father_ems_display')">
+                <option value="">Raça</option>
+                {% for b in breeds %}
+                <option value="{{ b.id }}" {% if cat and cat.father_breed_id==b.id %}selected{% endif %}>{{ b.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select id="father_color_id" name="father_color_id" class="form-select">
+                <option value="">Cor</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <div id="father_ems_display" class="form-control bg-light text-muted"></div>
+            </div>
+
+            <!-- MÃE -->
+            <div class="col-12 mt-3"><strong>Mãe</strong></div>
+            <div class="col-md-4">
+              <input class="form-control" type="text" name="mother_name" value="{{ cat.mother_name or '' }}" placeholder="Nome da mãe">
+            </div>
+            <div class="col-md-3">
+              <select id="mother_breed_id" name="mother_breed_id" class="form-select"
+                      onchange="loadColors('mother_breed_id','mother_color_id','mother_ems_display')">
+                <option value="">Raça</option>
+                {% for b in breeds %}
+                <option value="{{ b.id }}" {% if cat and cat.mother_breed_id==b.id %}selected{% endif %}>{{ b.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select id="mother_color_id" name="mother_color_id" class="form-select">
+                <option value="">Cor</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <div id="mother_ems_display" class="form-control bg-light text-muted"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÕES -->
         <div class="mt-4 d-flex gap-2">
-          <button class="btn btn-primary" type="submit">Enviar para aprovação</button>
-          <a class="btn btn-outline-secondary" href="{{ url_for('dashboard') }}">Cancelar</a>
+          <button class="btn btn-primary" type="submit">
+            {% if cat %}Salvar alterações{% else %}Cadastrar gato{% endif %}
+          </button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('cats') }}">Cancelar</a>
         </div>
       </form>
     </div>
   </div>
 </div>
+
+<script>
+function toggleBreederName() {
+  const opt = document.getElementById('breeder_option').value;
+  const group = document.getElementById('breeder_name_group');
+  group.style.display = (opt === 'outro') ? 'block' : 'none';
+}
+document.addEventListener('DOMContentLoaded', toggleBreederName);
+</script>
 {% endblock %}
