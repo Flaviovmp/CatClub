@@ -193,6 +193,7 @@ def dashboard():
     return render_template("dashboard.html", user=user, cats=cats)
 
 @app.route("/api/colors")
+@admin_required  # ou @login_required, se o usuário comum também usar
 def api_colors():
     breed_id = request.args.get("breed_id")
     if not breed_id: return jsonify([])
