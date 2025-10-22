@@ -1,1 +1,25 @@
-<h1>Bem-vindo ao CatClube</h1>
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-8">
+    <div class="card p-4">
+      <h1 class="h4 mb-3">Bem-vindo ao CatClube</h1>
+      <p>Cadastre-se, faça login, registre seus gatos e acompanhe o status de aprovação.</p>
+
+      <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-primary" href="{{ url_for('register') }}">Cadastrar associado</a>
+        <a class="btn btn-outline-primary" href="{{ url_for('login') }}">Entrar</a>
+      </div>
+
+      <hr class="my-4">
+      <h2 class="h6">Atalho (demo): promover um usuário a Admin</h2>
+      <form class="d-flex gap-2" method="post" action="{{ url_for('make_admin') }}">
+        <input class="form-control" type="email" name="email" placeholder="email do associado (já cadastrado)" required>
+        <button class="btn btn-outline-secondary" type="submit">Promover</button>
+      </form>
+      <p class="text-muted mt-2">Admin demo pronto: <code>admin@catclube.test</code> / senha <code>admin123</code></p>
+      <p class="mb-0">Após logar como admin, use o menu “Admin” no topo ou acesse diretamente <code>/admin/home</code>.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
